@@ -87,11 +87,6 @@
     var c = 10
     var d = 20
     swap(&c,&d) // 传入的参数 必须是变量必须加上& , 不能传入常量 或者 字面量
-    
-    // 方法二。使用多元组
-    func swap<T>(_ a: inout T, _ b: inout T) {
-        (a, b) = (b, a)
-    }
     ```
 
 11. as  as!  as! 的三种操作符的区别    
@@ -154,6 +149,7 @@
     pod 'RxSwift'
     pod 'RxCocoa'         # 把UI库和RxSwift结合
     pod 'DZNEmptyDataSet' #
+    pod 'Kingfisher'      #
     pod 'HandyJSON'       #
     pod 'ObjectMapper'    # Json转模型
     pod 'SnapKit'         # 跟Masonry一样是用来设置约束的，swift版
@@ -164,7 +160,7 @@
     pod 'RxDataSources'   # RxSwift中用于设置UITableView/UICollectionView data sources
     
     ```
-    
+
 13. swift中 $0  $1 的含义
 
     ```swift
@@ -288,12 +284,20 @@
 
 17. 协议、 类
 
-18. protocol中的 associatedtype关键字: 用来定义一个在协议中的 “泛型” 类型 。定义为 associatedtype类型的 在实现协议的类中 使用的时候 指明该类型的 具体类型是什么就可以了
+    ```
+    // 由于结构体（struct）属于值类型。当值类型的实例被声明为常量的时候，它的所有属性也就成了常量。
+    
+    属于引用类型的类（class）则不一样。把一个引用类型的实例赋给一个常量后，仍然可以修改该实例的变量属性。
+    ```
+
+    
+
+18. protocol中的 associatedtype关键字: 用来定义一个在协议中的“泛型”类型 定义为 associatedtype类型的在实现协议的类中使用的时候指明该类型的具体类型是什么就可以了
 
     ```swift
      protocol TestProtocol {
-        associatedtype aaaaa
-        func testFunc() -> aaaaa
+        associatedtype Num
+        func testFunc() -> Num
     }
     
     class TestClassInt: TestProtocol {
@@ -366,7 +370,7 @@
      protocol CCDelegate : class {
          func doSomething()
     }
-    // 代理当作变量的时候用weak 修饰防止循环引用
+    // 代理当作变量的时候用w eak 修饰防止循环引用
     weak var  delegate: CCDelegate?
     ```
 
@@ -390,163 +394,36 @@
     //[weak self]是为了防止循环引用，(a,b)是传过来的参数
     ```
 
-22. 可选协议
+22. 柯里化
 
     ```swift
-    //Swift protocol本身不允许可选项，要求所有方法都是必须得实现的。但是由于Swift和ObjC可以混编，那么为了方便和ObjC打交道，Swift支持在 protocol中使用 optional 关键字作为前缀来定义可选要求，且 协议和可选 要求都必须带上@objc属性。
-    @objc protocol CounterDataSource {
-        @objc optional func incrementForCount(count: Int) -> Int
-        @objc optional var fixedIncrement: Int { get }
+    //传统函数
+    func add (_ v1 : Int, _ v2 : Int) -> Int {
+      v1 + v2
     }
-    
-    // 但是标记 @objc 特性的协议只能被继承自 ObjC 类的类或者 @objc 类遵循，其他类以及结构体和枚举均不能遵循这种协议。这对于Swift protocol是一个很大的限制。
-    // 由于 protocol支持可扩展，那么我们可以在声明一个 protocol之后再用extension的方式给出部分方法默认的实现,这样这些方法在实际的类中就是可选实现的了。
+    //函数式编程
+    let num = 1
+    func add (_ v : Int) -> (Int) -> Int{
+      return {
+        $0 + v  // $0相当于 (Int) -> Int 中的参数Int
+      }
+    }
+    add(3)(num)
+    let fn = add(3)
+    fn(100)  // 返回值为100+3
     ```
 
-23. Delegate
+    
 
-    ```swift
-    // 错误写法
-    // 编译器会提示错误'weak' must not be applied to non-class-bound 'MyProyocol'; consider adding a protocol conformance that has a class bound
-    protocol MyProyocol {
-        func method()
-    }
-    class MyClass: NSObject {
-        weak var delegate: MyProyocol?
-    }
-    // 因为 Swift 的 protocol 是可以被 class 以外的其他类型遵守的，而对于像 struct 或是 enum 这样的类型，本身就不通过引用计数来管理内存，所以也不可能用 weak 这样的 ARC 的概念来进行修饰。
-    // 因此想要在 Swift 中使用 weak delegate，我们就需要将 protocol 限制在 class 内，例如
-    protocol MyProyocol: class {
-        func method()
-    }
-    
-    protocol MyProyocol: NSObjectProtocol {
-        func method()
-    }
-    //class限制协议只用在class中，NSObjectProtocol限制只用在NSObject中，明显class的范围更广，日常开发中都可以使用。
-    
-    ```
-    
-24. ### @synchronized
+23. 
 
-    ```swift
-    // 可以用来修饰一个变量，并为其自动加上和解除互斥锁，用以保证变量在作用范围内不会被其他线程改变。
-    // Swift 中 @synchronized 已经不存在了。其实 @synchronized 在幕后做的事情是调用了 objc_sync 中的 objc_sync_enter 和 objc_sync_exit 方法，并且加入了一些异常判断。因此，在 Swift 中，如果我们忽略掉那些异常的话，我们想要 lock 一个变量的话，可以这样写：
-    private var isResponse: Bool {
-        get {
-            objc_sync_enter(lockObj)
-            let result = _isResponse
-            objc_sync_exit(lockObj)
-            return result
-        }
-        set {
-            objc_sync_enter(lockObj)
-            _isResponse = newValue
-            objc_sync_exit(lockObj)
-        }
-    }
-    ```
+24. 
 
-25. ### struct与class
+25. 
 
-    ```swift
-    
-    // 区别
-    /*struct是值类型，class是引用类型。
-      struct有一个自动生成的成员逐一构造器，用于初始化新结构体实例中成员的属性；而class没有。
-      struct中修改 self 或其属性的方法必须将该实例方法标注为 mutating；而class并不需要。
-      struct不可以继承，class可以继承。
-      struct赋值是值拷贝，拷贝的是内容；class是引用拷贝，拷贝的是指针。
-      struct是自动线程安全的；而class不是。
-      struct存储在stack中，class存储在heap中，struct更快。*/
-    
-     //类更强大
-    /*继承允许一个类继承另一个类的特征
-      类型转换允许在运行时检查和解释一个类实例的类型
-      析构器允许一个类实例释放任何其所被分配的资源
-      引用计数允许对一个类的多次引用 */
-    
-    // 如果struct能够完全满足你的预期要求，可以多使用struct。因为 一般是使用最小的工具来完成你的目标
-    
-    //共同点
-    /*定义属性用于存储值
-      定义方法用于提供功能
-      定义下标操作使得可以通过下标语法来访问实例所包含的值
-      定义构造器用于生成初始化值
-      通过扩展以增加默认实现的功能
-      实现协议以提供某种标准功能*/
-    ```
+26. 
 
-26. ### map与flatmap
-
-    ```swift
-    // 都会对数组中的每一个元素调用一次闭包函数，并返回该元素所映射的值，最终返回一个新数组。但flatmap更进一步，多做了一些事情：
-    // 1.返回的结果中会去除nil，并且会解包Optional类型。
-    // 2.会将N维数组变成1维数组返回。
-    ```
-
-27. defer
-
-    ```swift
-    //`defer` 所声明的 block 会在当前代码执行退出后被调用。正因为它提供了一种延时调用的方式，所以一般会被用来做资源释放或者销毁，这在某个函数有多个返回出口的时候特别有用。
-    func testDefer() {
-        print("开始持有资源")
-        defer {
-            print("结束持有资源")
-        }
-    
-        print("程序运行ing")
-    }
-    
-    // 开始持有资源
-    // 程序运行ing
-    // 结束持有资源
-    ```
-
-    使用`defer`会方便的将前后必要逻辑放在一起，增强可读性和维护，但是不正确的使用也会导致问题。例如上面的例子，在持有之前先判断是否资源已经被其他持有：
-
-    ```swift
-    func testDefer(isLock: Bool) {
-        if !isLock {
-            print("开始持有资源")
-            defer {
-                print("结束持有资源")
-            }
-        }
-    
-        print("程序运行ing")
-    }
-    
-    // 开始持有资源
-    // 结束持有资源
-    // 程序运行ing
-    
-    ```
-
-    我们要注意到`defer`的作用域不是整个函数，而是当前的`scope`。那如果有多份`defer`呢？
-
-    ```swift
-    func testDefer() {
-        print("开始持有资源")
-    
-        defer {
-            print("结束持有资源A")
-        }
-    
-        defer {
-            print("结束持有资源B")
-        }
-    
-        print("程序运行ing")
-    }
-    
-    // 开始持有资源
-    // 程序运行ing
-    // 结束持有资源B
-    // 结束持有资源A
-    ```
-
-    当有多个`defer`时，后加入的先执行，可以猜测Swift使用了`stack`来管理`defer`。
+27. 
 
 28. 
 
@@ -557,32 +434,6 @@
     clas func 可以被继承重写
 
 31. 
-
-32. 
-
-33. 
-
-34. 
-
-35. 
-
-36. 
-
-37. 
-
-38. 
-
-39. 
-
-40. 
-
-41. 
-
-42. 
-
-43. 
-
-44. 
 
     
 
