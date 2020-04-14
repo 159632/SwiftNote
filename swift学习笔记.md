@@ -17,10 +17,18 @@
 8. 数组
 
    ```swift
+   // Array<Element>  等价于  [Element]
+   // 集合（Set）用来存储相同类型并且没有确定顺序的值
+   // 字典使用 Dictionary<Key, Value> 等价于 [Key: Value] 
+   // Swift 中的 Set 类型被写为 Set<Element> 没有等价模式
+   var letters = Set<Character>()
+   var favoriteGenres: Set<String> = ["Rock", "Classical", "Hip hop"]
+   
    let arr : [Any] = ["阿达"，18]   //不推荐在数组中放不同的元素
    var empatyArray = [String]()  //var表示可变数组,常量类型的空数组没有意义
-   // 同时便利角标和对应饿值
-   for (index ,value) in arr.enumerated().reversed(){
+   // 同时便利角标和对应值
+   // 如果我们同时需要每个数据项的值和索引值，可以使用 enumerated() 方法来进行数组遍历。enumerated() 返回一个由每一个数据项索引值和数据值组成的元组
+   for (index ,value) in arr.enumerated(){
       print(index)
       pring(value)
    }
@@ -52,6 +60,15 @@
 10. 函数
 
     ```swift
+    //可 变参数的传入值在函数体中变为此类型的一个数组。例如，一个叫做 numbers 的 Double... 型可变参数，在函数体内可以当做一个叫 numbers 的 [Double] 型的数组常量。
+    func arithmeticMean(_ numbers: Double...) -> Double {
+        var total: Double = 0
+        for number in numbers {
+            total += number
+        }
+        return total / Double(numbers.count)
+    }
+    
     //使用 # 能简化外部参数名的定义，num1、num2既是形式参数名 又是外部参数名
     func sum(#num1 : Int, #num2 : Int)
     {
